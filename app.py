@@ -35,21 +35,27 @@ with st.form("fraud_form"):
     submit = st.form_submit_button("Check Fraud")
 
 if submit:
-    # One-hot encode transaction type
-    type_encoding = [1 if f"type_{transaction_type}" == col else 0 for col in FEATURE_COLUMNS[1:]]
+    # One-hot encode transaction type based on training columns
+    type_encoding = [
+        1 if f"type_{transaction_type}" == col else 0 for col in FEATURE_COLUMNS[1:]
+    ]
     features = [amount] + type_encoding
     input_df = pd.DataFrame([features], columns=FEATURE_COLUMNS)
 
     # Predict
-    prob = model.predict_proba(input_df)[0][1]
-    pred = model.predict(input_df)[0]
+    try:
+        prob = model.predict_proba(input_df)[0][1]
+        pred = model.predict(input_df)[0]
 
-    st.metric("Fraud Probability", f"{prob * 100:.2f}%")
+        st.metric("Fraud Probability", f"{prob * 100:.2f}%")
 
-    if pred == 1:
-        st.error("🚨 Fraudulent transaction detected!")
-    else:
-        st.success("✅ Transaction appears legitimate.")
+        if pred == 1:
+            st.error("🚨 Fraudulent transaction detected!")
+        else:
+            st.success("✅ Transaction appears legitimate.")
 
-    with st.expander("🔍 View Model Input Features"):
-        st.write(input_df)
+        with st.expander("🔍 View Model Input Features"):
+            st.write(input_df)
+
+    except ValueError as e:
+        st.error(f"⚠️ Model prediction error: {e}")
